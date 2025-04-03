@@ -62,11 +62,27 @@ If a service fails, then the client can continue processing its tasks as another
 
     ```
 
-7.  Open that url in your web browser, and you should see something like the following:
+6.  Open that url in your web browser, and you should see something like the following:
 
     ![Verify Site](/images/verify-cluster.png)
 
-9.  
+7.  
+
+
+
+9.  Now that we have one replica of the application, we need to scale up the deployment.
+
+    ```console
+    $ oc patch dc eap-app -p '{"spec":{"replicas":2}}'
+    ```
+
+10. Make sure that both pods have come up successfully.
+
+    ```console
+    $ oc get pods
+    ```
+    
+11. Now we need to configure JGroups to support auto-discovery. 
 
 ## Cleanup
 
