@@ -38,10 +38,10 @@ If a service fails, then the client can continue processing its tasks as another
 
 3.  Create a new project
 
-   ```console
-   $ oc new-project eap-logging-demo
-   Now using project "eap-logging-demo" on server ...
-   ``` 
+    ```console
+    #  oc new-project eap-logging-demo
+    Now using project "eap-logging-demo" on server ...
+    ``` 
 
 5.  d
 
