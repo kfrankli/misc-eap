@@ -22,6 +22,8 @@ If a service fails, then the client can continue processing its tasks as another
 * The OpenShift `oc` client utility installed locally
 * User account has sufficient credentials to create a new-project and manage resources within the project.
 
+## Deploying an App and Configuring 
+
 ## Steps
 
 1.  Login via the CLI
@@ -37,10 +39,58 @@ If a service fails, then the client can continue processing its tasks as another
     Now using project "eap-cluster-demo" on server ...
     ``` 
 
-3.  Create an imagestream
+3.  Import and Create the latest JDK11 imagestream [per the docs](https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/7.4/html-single/getting_started_with_jboss_eap_for_openshift_container_platform/index#import_imagestreams_templates)
 
     ```console
     $ oc create -f https://raw.githubusercontent.com/jboss-container-images/jboss-eap-openshift-templates/eap74/eap74-openjdk11-image-stream.json
+    ```
+
+4.  We're going to create a buildConfig for the runtime application.
+
+    ```console
+    $ cat ./eap-cluster-app-buildConfig.yaml
+    - apiVersion: build.openshift.io/v1
+      kind: BuildConfig
+      metadata:
+        labels:
+          application: eap-cluster-app
+        name: eap-cluster-app
+      spec:
+        output:
+          to:
+            kind: ImageStreamTag
+            name: eap-cluster-app:latest
+        source:
+          dockerfile: |-
+            FROM ${EAP_RUNTIME_IMAGE_NAME}
+            COPY /server $JBOSS_HOME
+            USER root
+            RUN chown -R jboss:root $JBOSS_HOME && chmod -R ug+rwX $JBOSS_HOME
+            USER jboss
+            CMD $JBOSS_HOME/bin/openshift-launch.sh
+          images:
+          - from:
+              kind: ImageStreamTag
+              name: eap-cluster-app-build-artifacts:latest
+            paths:
+            - destinationDir: .
+              sourcePath: /s2i-output/server/
+        strategy:
+          dockerStrategy:
+            from:
+              kind: ImageStreamTag
+              name: jboss-eap74-openjdk11-runtime-openshift:7.4.0
+              namespace: eap-cluster-demo
+            imageOptimizationPolicy: SkipLayers
+          type: Docker
+        triggers:
+        - imageChange:
+            from:
+              kind: ImageStreamTag
+              name: eap-cluster-app-build-artifacts:latest
+          type: ImageChange
+        - type: ConfigChange
+    oc create -f ./eap-cluster-app-buildConfig.yaml
     ```
 
 4.  Using the `oc new-app` utility, we'll bootstrap a project to build our sample application and deploy it
